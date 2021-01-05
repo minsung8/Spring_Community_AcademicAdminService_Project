@@ -1,0 +1,1366 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="minsung">
+
+	<select id="boardListSelected" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select fk_boardKindNo, boardNo, fk_memberNo, subject, regDate, contents1, writerIp, fk_categoryno
+		from tbl_board_notice
+	</select>
+	
+ 	<select id="getViewNoticeList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_notice where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_notice V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	
+ 	<select id="getViewCouncilList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_council where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_council V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	
+ 	<select id="getViewMajorList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_major where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_major V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+
+ 	<select id="getViewClubList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_club where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_club V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	
+ 	<select id="getViewGraduateList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_graduate where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_graduate V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	
+ 	<select id="getViewCriticList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_critic where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_critic V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	
+ 	<select id="getViewStudyList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_study where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_study V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+
+ 	<select id="getViewCertList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_cert where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_cert V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+		
+	</select>
+	
+ 	<select id="getViewEmpList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_emp where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_emp V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+		
+	</select>
+	
+ 	<select id="getViewJobofferList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_joboffer where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_joboffer V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+		
+	</select>
+	
+ 	<select id="getViewLostList" parameterType="HashMap" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		, content, readCount, status, writerIp, upCount, levelImg, cmtCount
+		from 
+		(
+		select row_number() over(order by boardno asc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		, to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		, content, readCount, status, writerIp
+		, levelImg
+		, (select count(*) from tbl_comment_lost where fk_boardNo = V.boardNo) as cmtCount
+		, (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		from tbl_category C join tbl_board_lost V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+		on M.fk_levelNo = L.levelNo
+		where V.status = 1
+		<if test='searchWord != "" '>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+		
+	</select>
+	
+	<select id="getTotalCount" parameterType="HashMap" resultType="int">
+    	
+		select count(*)       
+		from tbl_board_notice b join tbl_commu_member m
+        on b.fk_memberno = m.fk_memberno
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%'|| lower(#{searchWord}) ||'%'
+		</if>
+		
+    </select> 
+    
+    <select id="categoryList" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungCategoryVO">
+		select categoryNo, fk_boardKindNo, categoryName
+		from TBL_CATEGORY
+		where fk_boardkindno = #{boardKindNo}
+    </select>
+    
+    <select id="kindBoard" parameterType="String" resultType="String">
+    	select boardname from TBL_BOARDKIND
+		where boardkindno = #{boardKindNo}
+    </select>
+    
+    <select id="oneBoardNotice" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_notice V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardCouncil" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_council V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardMajor" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_major V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardClub" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_club V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardGraduate" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_graduate V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardCritic" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_critic V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardStudy" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_study V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardCert" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_cert V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardEmp" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_emp V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardJoboffer" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_joboffer V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <select id="oneBoardLost" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select V.boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname as fk_nickname, V.fk_categoryno, C.categoryName as fk_categoryName,
+		subject, regDate, editDate, content, readCount, writerIp
+		from tbl_category C join tbl_board_lost V 
+		on C.categoryno = V.fk_categoryno
+		join tbl_commu_member M 
+		on V.fk_memberNo = M.fk_memberNo
+		where boardno = #{boardNo}
+    </select>
+    
+    <update id="edit" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	update tbl_board_notice set subject = #{subject}
+                   , content = #{content}
+		where boardNo = #{boardNo}
+    </update>
+    
+    <delete id="del" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	delete from tbl_board_notice
+		where boardNo = #{boardNo}
+    </delete>
+    
+    <insert id="addNotice" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_notice(FK_CATEGORYNO, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(1, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addCouncil" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_council(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addMajor" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_major(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addClub" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_club(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addGraduate" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_graduate(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addCritic" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_critic(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addStudy" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_study(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addCert" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_cert(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addEmp" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_emp(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addJoboffer" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_joboffer(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <insert id="addLost" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+    	insert into tbl_board_lost(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+    </insert>
+    
+    <select id="recentBoardList" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select fk_boardKindNo, subject, regDate, boardName, boardNo, status
+		from
+		(
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_notice b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno)
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_council b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from TBL_BOARD_major b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from TBL_BOARD_club b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from TBL_BOARD_graduate b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_critic b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from TBL_BOARD_study b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from TBL_BOARD_cert b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from TBL_BOARD_emp b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_joboffer b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from TBL_BOARD_lost b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_informal b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_polite b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_humor b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_issue b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_mbti b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_food b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_love b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_hobby b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_health b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_diet b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select fk_boardkindno, subject, regDate, k.boardname, boardNo, status from tbl_board_anonymous b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		order by regDate desc
+		) V
+		where status = 1 and 
+		<![CDATA[ rownum <= 5]]> 
+    </select>
+    
+     <select id="bestBoardList" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, fk_boardKindNo, subject, boardName
+		     from
+		     ( 
+		     select row_number() over(order by upCount desc, readCount desc) as rno, boardNo, fk_boardKindNo, subject, readCount, upCount, boardName
+		     from 
+		     (
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_NOTICE b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		      
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_COUNCIL b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_MAJOR b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_CLUB b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_GRADUATE b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_CRITIC b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_INFORMAL b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from tbl_board_polite b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_HUMOR b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_ISSUE b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_MBTI b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_FOOD b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_LOVE b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_HOBBY b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_HEALTH b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_DIET b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_STUDY b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_CERT b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_EMP b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     
+		     union all
+		     
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_JOBOFFER b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     union all
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from TBL_BOARD_LOST b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     union all
+		     select b.boardNo, b.fk_boardKindNo, b.subject, b.readCount, nvl(v.upCount, 0) as upCount, b.status, k.boardName
+		     from tbl_board_anonymous b
+		     left join 
+		     (
+		         select fk_boardKindNo, fk_boardNo, count(*) as upCount
+		         from tbl_board_good
+		         group by fk_boardKindNo, fk_boardNo
+		     ) v 
+		     on b.fk_boardKindNo = v.fk_boardKindNo and b.boardNo = v.fk_boardNo
+		     join tbl_boardkind k
+		     on b.fk_boardkindno = k.boardkindno
+		     ) 
+		     where status = 1
+		     ) 
+		<![CDATA[ where rno <= 5]]>
+    </select> 
+    
+     <select id="popularBoardList" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+	select boardNo, fk_boardKindNo, subject, readCount, boardName, status
+		from
+		(
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_notice b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno)
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_council b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from TBL_BOARD_major b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from TBL_BOARD_club b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from TBL_BOARD_graduate b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_critic b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from TBL_BOARD_study b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from TBL_BOARD_cert b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from TBL_BOARD_emp b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_joboffer b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from TBL_BOARD_lost b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_informal b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_polite b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_humor b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_issue b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_mbti b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_food b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_love b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_hobby b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_health b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_diet b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		union all
+		(select boardno, fk_boardkindno, subject, readCount, k.boardname, status from tbl_board_anonymous b
+		join tbl_boardkind k on b.fk_boardkindno = k.boardkindno )
+		order by readCount desc
+		) V 
+		where status = 1 and 
+		<![CDATA[ rownum <= 5]]>
+    </select>
+    
+    <!-- 회원 번호와 포인트를 받아와 회원 포인트를 올려주기 -->
+	<update id="pointPlus" parameterType="HashMap">
+		update tbl_commu_member set point = point + ${point}
+		where fk_memberNo = #{fk_memberNo}
+	</update>
+	
+	<!-- 회원번호로 회원의 포인트와 레벨 등을 불러오기 -->
+	<resultMap type="HashMap" id="pointCheck"> <!-- property는 HashMap의 키값이며 column이 컬럼명이다. -->
+		<result property="fk_memberNo" column="fk_memberNo" javaType="int" />
+		<result property="fk_levelNo" column="fk_levelNo" javaType="int" />
+		<result property="currentPoint" column="currentPoint" javaType="int" />
+		<result property="nextLevelNo" column="nextLevelNo" javaType="int" />
+		<result property="nextLevelPoint" column="nextLevelPoint" javaType="int" />
+	</resultMap>
+	
+	<select id="pointCheck" parameterType="String" resultMap="pointCheck">
+		select fk_memberNo, fk_levelNo, point as currentPoint, levelNo as nextLevelNo, levelPoint as nextLevelPoint
+		from tbl_commu_member M join tbl_commu_member_level L
+		on M.fk_levelNo = (L.levelNo - 1)
+		where fk_memberNo = #{fk_memberNo}
+	</select>
+	
+	<!-- 회원의 포인트와 레벨을 올려주기 -->
+	<update id="pointPlusWithLevel" parameterType="HashMap">
+		update tbl_commu_member set point = point + ${point}, fk_levelNo = ${nextLevelNo}
+		where fk_memberNo = #{fk_memberNo}
+	</update>
+	
+	<select id="getViewNotice" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_notice V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewCouncil" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_council V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewMajor" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_major V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+
+	<select id="getViewClub" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_club V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewGraduate" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_graduate V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewCritic" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_critic V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewStudy" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_study V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+
+	<select id="getViewCert" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_cert V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewEmp" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_emp V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewJoboffer" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_joboffer V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<select id="getViewLost" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_lost V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	<update id="addReadNotice" parameterType="String">
+		update tbl_board_notice set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<update id="addReadCouncil" parameterType="String">
+		update tbl_board_council set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+
+	<update id="addReadMajor" parameterType="String">
+		update tbl_board_major set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<update id="addReadClub" parameterType="String">
+		update tbl_board_club set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<update id="addReadGraduate" parameterType="String">
+		update tbl_board_graduate set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<update id="addReadCritic" parameterType="String">
+		update tbl_board_critic set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+
+	<update id="addReadStudy" parameterType="String">
+		update tbl_board_study set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<update id="addReadCert" parameterType="String">
+		update tbl_board_cert set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<update id="addReadEmp" parameterType="String">
+		update tbl_board_emp set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<update id="addReadJoboffer" parameterType="String">
+		update tbl_board_joboffer set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+
+	<update id="addReadLost" parameterType="String">
+		update tbl_board_lost set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<insert id="addBoardUp" parameterType="HashMap">
+		insert into tbl_board_good
+		values(${boardKindNo}, ${boardNo}, ${memberNo})
+	</insert>
+	
+	<select id="getBoardGoodCount" parameterType="HashMap" resultType="int">
+		select count(*) as upCount
+		from tbl_board_good
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo}
+	</select>
+	
+	<delete id="deleteBoardBad" parameterType="HashMap">
+		delete from tbl_board_bad
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo} and fk_memberNo = ${memberNo}
+	</delete>
+	
+	<delete id="deleteBoardGood" parameterType="HashMap">
+		delete from tbl_board_good
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo} and fk_memberNo = ${memberNo}
+	</delete>
+	
+	<insert id="addBoardDown" parameterType="HashMap">
+		insert into tbl_board_bad
+		values(${boardKindNo}, ${boardNo}, ${memberNo})
+	</insert>
+	
+	<select id="getBoardBadCount" parameterType="HashMap" resultType="int">
+		select count(*) as downCount
+		from tbl_board_bad
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo}
+	</select>
+	
+	<insert id="addBoardReport" parameterType="HashMap">
+		insert into tbl_board_report
+		values(${boardKindNo}, ${boardNo}, ${memberNo})
+	</insert>
+	
+	<select id="getReportCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_report
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo}
+	</select>
+	
+	<insert id="addFileReadNotice" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_notice(FK_CATEGORYNO, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(1, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadCouncil" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_council(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadMajor" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_major(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadClub" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_club(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadGraduate" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_graduate(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadCritic" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_critic(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadStudy" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_study(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadCert" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_cert(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadEmp" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_emp(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadJoboffer" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_joboffer(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFileReadLost" parameterType="com.project.skyuniversity.minsung.model.MinsungBoardVO">
+		insert into tbl_board_lost(fk_categoryNo, boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(${fk_categoryNo}, tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	
+	<select id="getMsgList" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungMsgVO">
+		select msgNo, fromMemberNo, toMemberNo, subject, content, to_char(sendDate, 'yyyy-mm-dd hh24:mi:ss') as sendDate, c.nickname as fromNickName
+		from tbl_message m join tbl_commu_member c
+		on m.fromMemberNo = c.fk_memberNo 
+		where toMemberNo = #{loginNo}
+		order by sendDate desc
+	</select>
+	
+	<select id="sendMsgList" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungMsgVO">
+		select msgNo, fromMemberNo, toMemberNo, subject, content, to_char(sendDate, 'yyyy-mm-dd hh24:mi:ss') as sendDate, c.nickname as toNickName
+		from tbl_message m join tbl_commu_member c
+		on m.toMemberNo = c.fk_memberNo 
+		where fromMemberNo = #{loginNo}
+		order by sendDate desc
+	</select>
+	
+	<select id="oneMsg" parameterType="String" resultType="com.project.skyuniversity.minsung.model.MinsungMsgVO">
+		select msgNo, fromMemberNo, toMemberNo, subject, content, to_char(sendDate, 'yyyy-mm-dd hh24:mi:ss') as sendDate, c.nickname as fromNickName
+		from tbl_message m join tbl_commu_member c
+		on m.fromMemberNo = c.fk_memberNo
+		where msgNo = #{msgNo} 
+	</select>
+	
+	<select id="getToMemberNo" parameterType="String" resultType="int">
+		select fk_memberNo from tbl_commu_member where nickname = #{nickName}
+	</select>
+	
+	<insert id="insertMsg" parameterType="HashMap">
+		insert into tbl_message(msgNo, fromMemberNo, toMemberNo, subject, content) 
+		values( seq_msg.nextval, #{loginNo}, #{toMemberNo}, #{subject}, #{content})
+	</insert>
+
+</mapper>
+
+
+
+
+
+
+
+
+
+
+
+

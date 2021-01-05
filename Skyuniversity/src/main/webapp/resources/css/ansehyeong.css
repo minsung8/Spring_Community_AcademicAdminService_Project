@@ -1,0 +1,177 @@
+@charset "UTF-8";
+
+
+div#index-div {
+	width: 80%;
+	min-height: 960px;
+	/* border: 1px solid red; */
+	
+}
+
+div#index-div-content {
+	/* border: 1px solid yellow; */
+	padding : 10px;
+	
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+div#index-show-carousel {
+	height: 230px;
+	/* border: solid 1px blue; */
+	margin-bottom: 30px;
+	margin-top: 30px;
+	width: 100%;
+	
+	
+}
+
+div#index-show-carousel img {
+	display: none;
+	width: 95%;
+	height: 220px;
+}
+
+
+.dot {
+	cursor: pointer;
+	height: 10px;
+	width: 10px;
+	margin: 0 2px;
+	background-color: #bbb;
+	border-radius: 50%;
+	display: inline-block;
+	transition: background-color 0.6s ease;
+}
+
+.sehyeong, .dot:hover {
+  background-color: #717171;
+  
+}
+
+/* Fading animation */
+.fade {
+  -webkit-animation-name: fade;
+  -webkit-animation-duration: 1.5s;
+  animation-name: fade;
+  animation-duration: 1.5s;
+}
+
+@-webkit-keyframes fade {
+  from {opacity: .4}
+  to {opacity: 1}
+}
+
+@keyframes fade {
+  from {opacity: .4}
+  to {opacity: 1}
+}
+
+
+
+
+장난똥때리나?
+
+
+
+
+
+
+
+
+
+
+
+
+
+div#index-show-board {
+	line-height: 1.5;
+	
+}
+div#index-show-board td:hover{
+	cursor: pointer;
+	
+}
+
+div.row {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 0 4px;
+}
+
+div.column {
+  flex: 30%;
+  padding: 0 4px;
+  margin: 5px;
+  
+}
+div.index-board {
+	min-height: 240px;
+	/* border: green solid 1px; */
+	border: 2px solid #cccccc;
+	border-bottom-style: outset;
+	border-right-style: outset;
+}
+
+.board-body tbody tr:nth-child(odd) {
+	background-color: rgba(8,67,173,0.1);
+}
+
+.board-body tbody tr:hover{
+	cursor: pointer;
+	font-weight: bold;
+}
+
+.board-body tbody tr{
+	height: 20px;
+}
+
+
+
+div.hot {
+	min-height: 370px;
+}
+
+div.board-header {
+	
+	width: 100%;
+	height: 40px;
+	text-align: left;
+	background-color: rgba(8,67,173,0.5);
+	padding: 5px 5px 5px 15px;
+	
+}
+span.board-title {
+	font-weight: bold;
+	font-size: 15pt;
+}
+
+span.board-title:hover {
+	cursor: pointer;
+}
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,429 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="Jihyun">
+	 <select id="getLoginMember" resultType="com.project.skyuniversity.jihyun.model.JihyunMemberVO" parameterType="HashMap">
+		with v  as (
+				select name, memberNo, pwd,
+				                    func_gender_2(jubun) as gender, 
+				                    grade
+				                    , to_char(enterDay, 'yyyy-mm-dd') as enterDay
+				                    , chinaName, engName
+				                    , to_char(graduateDay, 'yyyy-mm-dd') as graduateDay
+				                    , fk_regSeq, fk_deptSeq, totalSemester, email, img, postcode, address, detailAddress, extraAddress, birth,
+				                    8-absenceCnt as absenceCnt, mobile
+				from tbl_member
+				where memberno = #{userid} and pwd = #{pwd} 
+				) 
+				 
+		select name, memberNo, pwd,  gender, grade, enterDay, chinaName, engName, graduateDay, fk_regSeq, fk_deptSeq, totalSemester, email, mobile, img, postcode, address, detailAddress, extraAddress, birth, absenceCnt, deptName, status
+		from V JOIN tbl_dept D
+		on  V.fk_deptSeq = D.deptSeq
+		join tbl_school_reg R
+		on V.fk_regseq = r.regseq
+	</select>
+	
+	 <select id="getLoginuserFromCommu" resultType="com.project.skyuniversity.jihyun.model.JihyunMemberVO" parameterType="String">
+		with v  as (
+				select name, memberNo, pwd,
+				                    func_gender_2(jubun) as gender, 
+				                    grade, enterDay, chinaName, engName, graduateDay, fk_regSeq, fk_deptSeq, totalSemester, email, img, postcode, address, detailAddress, extraAddress, birth,
+				                    8-absenceCnt as absenceCnt, mobile
+				from tbl_member
+				where memberno = #{memberNo} 
+				) 
+				 
+		select name, memberNo, pwd,  gender, grade, enterDay, chinaName, engName, graduateDay, fk_regSeq, fk_deptSeq, totalSemester, email, mobile, img, postcode, address, detailAddress, extraAddress, birth, absenceCnt, deptName, status
+		from V JOIN tbl_dept D
+		on  V.fk_deptSeq = D.deptSeq
+		join tbl_school_reg R
+		on V.fk_regseq = r.regseq
+	</select>
+
+	<update id="sInfoUpdate" parameterType="HashMap">
+		update tbl_member set mobile = #{mobile}, email = #{email}, chinaName = #{chinaName}, engName = #{engName}
+		where memberNo = #{memberNo}
+	</update>
+	
+	<update id="sAddressUpdate" parameterType="HashMap">
+		update tbl_member set postcode = #{postcode}, address = #{address}, detailAddress = #{detailAddress}, extraAddress = #{extraAddress}
+		where memberNo = #{memberNo}
+	</update>
+
+	<update id="updatePwd" parameterType="HashMap">
+		update tbl_member set pwd = #{pwd} 
+   		where memberno = #{memberNo}
+	</update>
+	
+	<select id="checkPwd" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_member
+		where memberno=#{memberNo} and pwd=#{nowPwd}
+	</select>
+	
+	<resultMap type="HashMap" id="certificateKindMap">
+		<result property="certificateKindSeq" column="certificateKindSeq" javaType="String"/>
+		<result property="certificateName" column="certificateName" javaType="String"/>
+		<result property="charge" column="charge" javaType="String"/>
+		<result property="lang" column="lang" javaType="String"/>
+	</resultMap>
+	<select id="getCertificateKindList" resultMap="certificateKindMap">
+		select certificateKindSeq, certificateName, charge, lang
+		from tbl_certificateKind
+		order by 1
+	</select>
+	
+	<resultMap type="HashMap" id="getApplicationListMap">
+		<result property="rno" column="rno" javaType="String"/>
+		<result property="name" column="name" javaType="String"/>
+		<result property="certificateName" column="certificateName" javaType="String"/>
+		<result property="applicationDate" column="applicationDate" javaType="String"/>
+		<result property="count" column="count" javaType="String"/>
+		<result property="grantDate" column="grantDate" javaType="String"/>
+		<result property="grantStatus" column="grantStatus" javaType="String"/>
+		<result property="lang" column="lang" javaType="String"/>
+		<result property="recieveWay" column="recieveWay" javaType="String"/>
+	</resultMap>
+	<select id="getApplicationList" parameterType="String" resultMap="getApplicationListMap">
+			 select   row_number() over(order by certificateSeq desc) as rno,
+                name
+                , certificateName
+                , to_char(applicationDate, 'yyyy-mm-dd')as applicationDate
+                , count
+                , to_char(grantDate, 'yyyy-mm-dd') as grantDate
+	            , case when grantStatus = 0 then '신청' when grantStatus = 1 then '승인' when grantStatus = 2 then '반려' else '보류' end AS grantStatus
+	            , case when c.lang = 0 then '국문' else '영문' end as lang
+	            , case when c.recieveWay = 0 then '직접수령' else '등기수령' end as recieveWay
+			 from tbl_certificate C join tbl_certificateKind K
+			 on K.certificateKindSeq  = C.fk_certificateKindSeq
+			 join tbl_member M
+			 on c.fk_memberno = m.memberno
+			 where fk_memberno = #{memberNo}
+	</select>
+	
+	<resultMap type="HashMap" id="getNoticeListMap">
+		<result property="rno" column="rno" javaType="String"/>
+		<result property="noticeNo" column="noticeNo" javaType="String"/>
+		<result property="subject" column="subject" javaType="String"/>
+		<result property="contents" column="contents" javaType="String"/>
+		<result property="writeday" column="writeday" javaType="String"/>
+		<result property="readcount" column="readcount" javaType="String"/>
+		<result property="filename" column="filename" javaType="String"/>
+		<result property="orgfilename" column="orgfilename" javaType="String"/>
+		<result property="filesize" column="filesize" javaType="String"/>
+		<result property="status" column="status" javaType="String"/>
+	</resultMap>
+	<select id="getNoticeList" resultMap="getNoticeListMap">
+		select row_number() over(order by noticeNo desc) as rno, noticeNo, subject, contents, to_char(writeday, 'yyyy-mm-dd') as writeday, readcount, filename, orgfilename, filesize, status 
+		from tbl_hsnotice 
+		where status = 0
+	</select>
+	
+	<select id="getNoticeDetail0" resultMap="getNoticeListMap" parameterType="HashMap">
+		select row_number() over(order by noticeNo desc) as rno, noticeNo, subject, contents, to_char(writeday, 'yyyy-mm-dd') as writeday, readcount, filename, orgfilename, filesize, status 
+		from tbl_hsnotice 
+		where noticeNo =  #{noticeNo} and status = #{status}
+	</select>
+	
+	<resultMap type="HashMap" id="getdeptNoticeListMap">
+		<result property="rno" column="rno" javaType="String"/>
+		<result property="noticeNo" column="noticeNo" javaType="String"/>
+		<result property="fk_deptSeq" column="fk_deptSeq" javaType="String"/>
+		<result property="deptName" column="deptName" javaType="String"/>
+		<result property="subject" column="subject" javaType="String"/>
+		<result property="contents" column="contents" javaType="String"/>
+		<result property="writeday" column="writeday" javaType="String"/>
+		<result property="readcount" column="readcount" javaType="String"/>
+		<result property="filename" column="filename" javaType="String"/>
+		<result property="orgfilename" column="orgfilename" javaType="String"/>
+		<result property="filesize" column="filesize" javaType="String"/>
+		<result property="status" column="status" javaType="String"/>
+	</resultMap>
+	<select id="getdeptNoticeList" resultMap="getdeptNoticeListMap">
+		select row_number() over(order by noticeNo desc) as rno, noticeNo, fk_deptSeq, deptName, subject, contents,  to_char(writeday, 'yyyy-mm-dd') as writeday, readcount, filename, orgfilename, filesize, status 
+		from tbl_hsnotice H join tbl_dept D
+		on H.fk_deptSeq = D.deptSeq
+		where status = 1
+	</select>
+
+	<select id="getNoticeDetail1" resultMap="getdeptNoticeListMap" parameterType="HashMap">
+		select row_number() over(order by noticeNo desc) as rno, noticeNo, fk_deptSeq, deptName, subject, contents,  to_char(writeday, 'yyyy-mm-dd') as writeday, readcount, filename, orgfilename, filesize, status 
+		from tbl_hsnotice H join tbl_dept D
+		on H.fk_deptSeq = D.deptSeq
+		where noticeNo = #{noticeNo} and status = #{status}
+	</select>
+	
+	<resultMap type="HashMap" id="getsubjectNoticeListMap">
+		<result property="rno" column="rno" javaType="String"/>
+		<result property="noticeNo" column="noticeNo" javaType="String"/>
+		<result property="fk_subjectNo" column="fk_subjectNo" javaType="String"/>
+		<result property="subjectName" column="subjectName" javaType="String"/>
+		<result property="subject" column="subject" javaType="String"/>
+		<result property="contents" column="contents" javaType="String"/>
+		<result property="writeday" column="writeday" javaType="String"/>
+		<result property="readcount" column="readcount" javaType="String"/>
+		<result property="filename" column="filename" javaType="String"/>
+		<result property="orgfilename" column="orgfilename" javaType="String"/>
+		<result property="filesize" column="filesize" javaType="String"/>
+		<result property="status" column="status" javaType="String"/>
+	</resultMap>
+	<select id="getsubjectNoticeList" resultMap="getsubjectNoticeListMap">
+		select row_number() over(order by noticeNo desc) as rno, noticeNo, fk_subjectNo, subjectName, subject, contents,  to_char(writeday, 'yyyy-mm-dd') as writeday, readcount, filename, orgfilename, filesize, status 
+		from tbl_hsnotice H  join tbl_subject S
+		on H.fk_subjectNo = S.subjectNo
+		where status = 2
+	</select>
+	
+	<select id="getNoticeDetail2" resultMap="getsubjectNoticeListMap" parameterType="HashMap">
+		select row_number() over(order by noticeNo desc) as rno, noticeNo, fk_subjectNo, subjectName, subject, contents,  to_char(writeday, 'yyyy-mm-dd') as writeday, readcount, filename, orgfilename, filesize, status 
+		from tbl_hsnotice H  join tbl_subject S
+		on H.fk_subjectNo = S.subjectNo
+		where noticeNo =  #{noticeNo} and status = #{status}
+	</select>
+	
+	<insert id="addCertificateApplicationOne" parameterType="HashMap">
+			insert into tbl_certificate(certificateSeq, fk_certificateKindSeq, fk_memberNo, count, lang, recieveWay) 
+			values(certificateSeq.nextval, #{certificateKindSeq}, #{memberNo}, #{count}, #{lang}, #{recieveWay})
+	</insert>
+	
+	<insert id="addCertificateApplicationAll" parameterType="HashMap">
+		<foreach item="ca" index="index" collection="list" separator=" " open="INSERT ALL " close="SELECT * FROM DUAL">
+			into tbl_certificate(certificateSeq, fk_certificateKindSeq, fk_memberNo, count, lang, recieveWay) 
+			values(certificateSeq.nextval+${index}, ${ca.certificateKindSeq}, ${ca.memberNo}, ${ca.count}, ${ca.lang}, ${ca.recieveWay})
+		</foreach>
+	</insert>
+	
+	
+	<!-- <resultMap type="HashMap" id="getLectureListMap">
+		<result property="fk_memberNo" column="fk_memberNo" javaType="String"/>
+		<result property="subjectName" column="subjectName" javaType="String"/>
+		<result property="semester" column="semester" javaType="String"/>
+		<result property="courseYear" column="courseYear" javaType="String"/>
+		<result property="mustStatus" column="mustStatus" javaType="String"/>
+		<result property="fk_deptSeq" column="fk_deptSeq" javaType="String"/>
+	</resultMap>
+	<select id="getLectureList" resultMap="getLectureListMap" parameterType="String">
+		select fk_memberNo, subjectName, semester, courseYear, mustStatus, fk_deptSeq
+		from
+			(
+			select fk_memberNo, subjectName, semester, courseYear, mustStatus, fk_deptSeq, case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+			from tbl_course C join tbl_subject S 
+			on c.fk_subjectNo = s.subjectNo
+			where fk_memberNo = #{memberNo} and courseyear = to_char(sysdate, 'yyyy')
+			order by courseyear desc, semester desc
+			) V
+		where semester = thisSemester
+	</select> -->
+	
+	<resultMap type="HashMap" id="getThisLectureMap">
+		<result property="semester" column="semester" javaType="String"/>
+		<result property="courseYear" column="courseYear" javaType="String"/>
+		<result property="subjectName" column="subjectName" javaType="String"/>
+	</resultMap>
+	
+	<select id="getThisJunpil" resultMap="getThisLectureMap" parameterType="String">
+		select  semester, courseYear, subjectName
+        from 
+          (
+	        select semester, courseYear, subjectName, mustStatus, s_deptSeq, fk_deptSeq as m_deptSeq, case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+	        from
+	        (
+	            select semester, courseYear, fk_memberNo, subjectName, mustStatus, deptSeq as s_deptSeq
+	            from tbl_course c join tbl_subject s
+	            on c.fk_subjectNo = s.subjectNo
+	            join tbl_dept d
+	            on s.fk_deptSeq = d.deptSeq
+	            where fk_memberNo = #{memberNo}
+	        )V
+	        join tbl_member m
+	        on v.fk_memberNo = m.memberNo
+          )T
+        where s_deptSeq = m_deptSeq and muststatus = 0 and semester = thissemester and courseYear = to_char(sysdate, 'yyyy')
+	</select>
+	
+	<select id="getThisJunsun" resultMap="getThisLectureMap" parameterType="String">
+		select  semester, courseYear, subjectName
+        from 
+        (
+	        select semester, courseYear, subjectName, mustStatus, s_deptSeq, fk_deptSeq as m_deptSeq, case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+	        from
+	        (
+	            select semester, courseYear, fk_memberNo, subjectName, mustStatus, deptSeq as s_deptSeq
+	            from tbl_course c join tbl_subject s
+	            on c.fk_subjectNo = s.subjectNo
+	            join tbl_dept d
+	            on s.fk_deptSeq = d.deptSeq
+	            where fk_memberNo = #{memberNo}
+	        )V
+	        join tbl_member m
+	        on v.fk_memberNo = m.memberNo
+        )T
+        where s_deptSeq = m_deptSeq and muststatus = 1 and semester = thissemester and courseYear = to_char(sysdate, 'yyyy')
+	</select>
+	
+	<select id="getThisGyopil" resultMap="getThisLectureMap" parameterType="String">
+		select semester, courseYear, subjectName
+        from
+        (
+            select semester, courseYear, subjectName, mustStatus, deptSeq, case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+            from tbl_course c join tbl_subject s
+            on c.fk_subjectNo = s.subjectNo
+            join tbl_dept d
+            on s.fk_deptSeq = d.deptSeq
+            where fk_memberNo = #{memberNo}
+        )V
+        where deptSeq = 23 and mustStatus = 0 and semester = thissemester and courseYear = to_char(sysdate, 'yyyy')
+	</select>
+	
+	<select id="getThisGyosun" resultMap="getThisLectureMap" parameterType="String">
+		select semester, courseYear, subjectName
+        from
+        (
+            select semester, courseYear, subjectName, mustStatus, deptSeq, case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+            from tbl_course c join tbl_subject s
+            on c.fk_subjectNo = s.subjectNo
+            join tbl_dept d
+            on s.fk_deptSeq = d.deptSeq
+            where fk_memberNo = #{memberNo}
+        )V
+        where deptSeq = 23 and mustStatus = 1 and semester = thissemester and courseYear = to_char(sysdate, 'yyyy')
+	</select>
+	
+	<select id="getThisIlsun" resultMap="getThisLectureMap" parameterType="String">
+		select  semester, courseYear, subjectName
+        from 
+        (
+	        select semester, courseYear, subjectName, mustStatus, s_deptSeq, fk_deptSeq as m_deptSeq, case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+	        from
+	        (
+	            select semester, courseYear, fk_memberNo, subjectName, mustStatus, deptSeq as s_deptSeq
+	            from tbl_course c join tbl_subject s
+	            on c.fk_subjectNo = s.subjectNo
+	            join tbl_dept d
+	            on s.fk_deptSeq = d.deptSeq
+	            where fk_memberNo = #{memberNo}
+	        )V
+	        join tbl_member m
+	        on v.fk_memberNo = m.memberNo
+        )T
+        where s_deptSeq != m_deptSeq and s_deptSeq != 23 and semester = thissemester and courseyear = to_char(sysdate, 'yyyy')
+	</select>
+	
+	
+	<resultMap type="HashMap" id="getTotalGradeMap">
+		<result property="semester" column="semester" javaType="String"/>
+		<result property="courseYear" column="courseYear" javaType="String"/>
+		<result property="subjectName" column="subjectName" javaType="String"/>
+		<result property="mustStatus" column="mustStatus" javaType="String"/>
+		<result property="subjectNo" column="subjectNo" javaType="String"/>
+		<result property="deptSeq" column="deptSeq" javaType="String"/>
+		<result property="score" column="score" javaType="String"/>
+		<result property="credits" column="credits" javaType="String"/>
+	</resultMap>
+	<select id="getTotalJunpilGrade" resultMap="getTotalGradeMap" parameterType="String">
+		select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+        from 
+        (
+	        select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, fk_deptSeq as m_deptSeq, score, credits,  case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+	        from
+	        (
+	            select semester, courseYear, fk_memberNo, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+	            from tbl_course c join tbl_subject s
+	            on c.fk_subjectNo = s.subjectNo
+	            join tbl_dept d
+	            on s.fk_deptSeq = d.deptSeq
+	            where fk_memberNo = #{memberNo}
+	        )V
+	        join tbl_member m
+	        on v.fk_memberNo = m.memberNo
+        )T
+        where deptSeq = m_deptSeq and muststatus = 0 and semester != thisSemester
+	</select>
+	
+	<select id="getTotalJunsunGrade" resultMap="getTotalGradeMap" parameterType="String">
+		select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+        from 
+        (
+	        select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, fk_deptSeq as m_deptSeq, score, credits,  case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+	        from
+	        (
+	            select semester, courseYear, fk_memberNo, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+	            from tbl_course c join tbl_subject s
+	            on c.fk_subjectNo = s.subjectNo
+	            join tbl_dept d
+	            on s.fk_deptSeq = d.deptSeq
+	            where fk_memberNo = #{memberNo}
+	        )V
+	        join tbl_member m
+	        on v.fk_memberNo = m.memberNo
+        )T
+        where deptSeq = m_deptSeq and muststatus = 1 and semester != thisSemester
+	</select>
+	
+	<select id="getTotalGyopilGrade" resultMap="getTotalGradeMap" parameterType="String">
+		select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+        from
+        (
+            select semester, courseYear, fk_subjectNo, subjectName, mustStatus, subjectNo, deptSeq, score, credits,  case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+            from tbl_course c join tbl_subject s
+            on c.fk_subjectNo = s.subjectNo
+            join tbl_dept d
+            on s.fk_deptSeq = d.deptSeq
+            where fk_memberNo = #{memberNo}
+        )V
+        where deptSeq = 23 and mustStatus = 0 and semester != thisSemester
+	</select>
+	
+	<select id="getTotalGyosunGrade" resultMap="getTotalGradeMap" parameterType="String">
+	    select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+        from
+        (
+            select semester, courseYear, fk_subjectNo, subjectName, mustStatus, subjectNo, deptSeq, score, credits,  case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+            from tbl_course c join tbl_subject s
+            on c.fk_subjectNo = s.subjectNo
+            join tbl_dept d
+            on s.fk_deptSeq = d.deptSeq
+            where fk_memberNo = #{memberNo}
+        )V
+        where deptSeq = 23 and mustStatus = 1 and semester != thisSemester
+	</select>
+	
+	<select id="getTotalIlsunGrade" resultMap="getTotalGradeMap" parameterType="String">
+		select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+        from 
+        (
+	        select semester, courseYear, subjectName, mustStatus, subjectNo, deptSeq, fk_deptSeq as m_deptSeq, score, credits,  case when to_char(sysdate, 'q') in(1,2) then 1 else 2 end as thisSemester
+	        from
+	        (
+	            select semester, courseYear, fk_memberNo, subjectName, mustStatus, subjectNo, deptSeq, score, credits
+	            from tbl_course c join tbl_subject s
+	            on c.fk_subjectNo = s.subjectNo
+	            join tbl_dept d
+	            on s.fk_deptSeq = d.deptSeq
+	            where fk_memberNo = #{memberNo}
+	        )V
+	        join tbl_member m
+	        on v.fk_memberNo = m.memberNo
+        )T
+        where deptSeq != m_deptSeq and  deptSeq != 23 and muststatus = 0 and semester != thisSemester
+	</select>
+	
+	
+	<resultMap type="HashMap" id="getsScheduleListMap">
+		<result property="scheduleNo" column="scheduleNo" javaType="String"/>
+		<result property="subject" column="subject" javaType="String"/>
+		<result property="contents" column="contents" javaType="String"/>
+		<result property="startDate" column="startDate" javaType="String"/>
+		<result property="endDate" column="endDate" javaType="String"/>
+		<result property="status" column="status" javaType="String"/>
+	</resultMap>
+	<select id="getsScheduleList" resultMap="getsScheduleListMap">
+		select scheduleNo, subject, contents, startDate, endDate, status
+		from tbl_schedule
+		where status = 0
+		order by scheduleNo asc
+	</select>
+</mapper>

@@ -1,0 +1,601 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="eunji">
+
+	<select id="selectMemberInfo" parameterType="HashMap" resultType="com.project.skyuniversity.eunji.model.MemberVO">
+		select currentSemester, name, memberNo, deptName, jubun
+		from tbl_member M
+		inner join tbl_dept D
+		on M.fk_deptseq = D.deptseq
+		where memberno = #{memberNo}
+	</select>
+	
+	<select id="selectAllDept" resultType="String" >
+		select deptname
+		from tbl_dept
+	</select>
+	
+	<select id="selectAllSubject" resultType="String" parameterType="int">
+		select subjectname
+		from tbl_subject
+		where subssemester = #{semester}
+	</select>
+	
+	<select id="selectDeptClass" resultType="String" parameterType="HashMap">
+		select subjectname, subssemester
+		from tbl_subject S
+		inner join tbl_dept D
+		on S.fk_deptseq = D.deptseq
+		where subssemester = #{semester}
+		<if test="dept != null">
+			and deptname = #{dept}
+		</if>
+		<if test="grade != null">
+			and grade = #{grade}
+		</if>
+	</select>
+	
+	<resultMap type="HashMap" id="subjectsMap">
+		<result property="deptname" column="deptname" javaType="String"/>
+		<result property="subjectname" column="subjectname" javaType="String"/>
+		<result property="subjectno" column="subjectno" javaType="String"/>
+		<result property="name" column="name" javaType="String"/>
+		<result property="credits" column="credits" javaType="String"/>
+		<result property="day" column="day" javaType="String"/>
+		<result property="period" column="period" javaType="String"/>
+		<result property="peoplecnt" column="peoplecnt" javaType="String"/>
+		<result property="grade" column="grade" javaType="String"/>
+		<result property="curpeoplecnt" column="curpeoplecnt" javaType="String"/>
+	</resultMap>
+	<select id="getSubjectList" resultMap="subjectsMap">
+		select deptname, subjectname, subjectno, name, credits, day, period, peoplecnt, grade, curpeoplecnt, subssemester
+		from
+		(
+		select p.name, subjectno, subjectname, credits, day, period, peoplecnt, fk_deptseq, grade, curpeoplecnt, subssemester
+		from tbl_subject S
+		inner join tbl_professor P
+		on S.fk_professorno = p.professorno
+		) V
+		inner join tbl_dept D
+		on V.fk_deptseq = D.deptseq
+		where subssemester=#{semester} 
+		<if test="dept != null">
+			and deptname = #{dept}
+		</if>
+		<if test="grade != null">
+			and grade = #{grade}
+		</if>
+		<if test="firstsub != null">
+			and subjectname = #{firstsub}
+		</if>
+		<if test="subject != null">
+			and subjectname = #{subject}
+		</if>
+	</select>
+	
+	<select id="selectDeptOneSub" parameterType="String" resultType="String">
+		select deptname
+		from tbl_dept D
+		inner join tbl_subject S
+		on D.deptseq = S.fk_deptseq
+		where subjectno = #{subjectno}
+	</select>
+	
+	<insert id="insertCourse" parameterType="HashMap">
+		insert into tbl_course(courseno,semester,courseyear, fk_memberno, fk_subjectNo)
+		values(tbl_course_seq.nextval, #{currentsemester}, #{year}, #{memberNo}, #{subjectno})
+	</insert>
+	
+	<select id="recourseInfo" parameterType="HashMap" resultType="int">
+		select count(fk_subjectno)
+		from tbl_course
+		where fk_memberno = #{memberNo} and fk_subjectno=#{subjectno} and recourse ='1'
+	</select>
+	
+	<insert id="insertReCourse" parameterType="HashMap">
+		insert into tbl_course(courseno,semester,courseyear, fk_memberno, fk_subjectNo)
+		values(tbl_course_seq.nextval, #{cursemester}, #{year}, #{memberno}, #{subjectno})
+	</insert>
+	
+	<select id="recourseInfo2" parameterType="HashMap" resultType="int">
+		select count(fk_subjectno)
+		from tbl_course
+		where fk_memberno = #{memberNo} and fk_subjectno=#{subjectno} and recourse ='0'
+	</select>
+	
+	<update id="updatePlusCnt" parameterType="String">
+		update Tbl_Subject set Curpeoplecnt = Curpeoplecnt+1 where Subjectno = #{string}
+	</update>
+	
+	<resultMap type="HashMap" id="regMap">
+		<result property="subjectname" column="subjectname" javaType="String"/>
+		<result property="subjectno" column="subjectno" javaType="String"/>
+		<result property="name" column="name" javaType="String"/>
+		<result property="credits" column="credits" javaType="String"/>
+		<result property="day" column="day" javaType="String"/>
+		<result property="period" column="period" javaType="String"/>
+		<result property="peoplecnt" column="peoplecnt" javaType="String"/>
+		<result property="curpeoplecnt" column="curpeoplecnt" javaType="String"/>
+		<result property="courseno" column="courseno" javaType="String"/>
+	</resultMap>
+	<select id="selectRegList" parameterType="HashMap" resultMap="regMap">
+		select name, subjectname, credits, subjectno, day, period, peoplecnt, curpeoplecnt, courseno
+		from
+		(
+		select name, subjectno, subjectname, credits, day, period, peoplecnt, curpeoplecnt
+		from tbl_subject S
+		inner join tbl_professor P
+		on S.fk_professorno = P.professorno
+		) V
+		inner join tbl_course C
+		on V.subjectno = C.fk_subjectno
+		where fk_memberno = #{memberno} and courseyear = #{year} and semester = #{cursemester}
+	</select>
+	
+	<delete id="deleteCourse" parameterType="String">
+		delete from tbl_course where courseno=#{no}
+	</delete>
+	
+	<update id="updateDelCnt" parameterType="String">
+		update Tbl_Subject set Curpeoplecnt = Curpeoplecnt-1 where Subjectno = #{subno}
+	</update>
+	
+	<select id="selectSumCredit" parameterType="HashMap" resultType="int">
+		select nvl(sum(credits),0)
+		from tbl_course C
+		inner join tbl_subject S
+		on c.fk_subjectno = S.subjectno
+		where fk_memberno = #{memberno} and courseyear = #{year} and semester = #{cursemester}
+	</select>
+	
+	<select id="dayInfo" parameterType="HashMap" resultType="String">
+		select day
+		from tbl_course C
+		inner join tbl_subject S
+		on c.fk_subjectno = S.subjectno
+		where fk_memberno = #{memberNo} and courseyear = #{year} and semester = #{currentsemester}
+	</select>
+	
+	<select id="periodInfo" parameterType="HashMap" resultType="String">
+		select period
+		from tbl_course C
+		inner join tbl_subject S
+		on c.fk_subjectno = S.subjectno
+		where fk_memberno = #{memberNo} and courseyear = #{year} and semester = #{currentsemester}
+	</select>
+	
+	<select id="uniqueInfo" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_course C
+		inner join tbl_subject S
+		on c.fk_subjectno = S.subjectno
+		where fk_memberno = #{memberNo} and subjectno = #{subjectno} and recourse = '0'
+	</select>
+	
+	<insert id="add" parameterType="com.project.skyuniversity.eunji.model.OfficialLeaveVO">
+		insert into tbl_official_leave(leaveno, startdate, enddate, starttime, endtime, reason, fk_memberno)
+		values(tbl_official_leave_seq.nextval, #{startDate}, #{endDate}, #{startTime}, #{endTime}, #{reason}, #{fk_memberNo})
+	</insert>
+	
+	<insert id="addNonTime" parameterType="com.project.skyuniversity.eunji.model.OfficialLeaveVO">
+		insert into tbl_official_leave(leaveno, startdate, enddate, reason, fk_memberno)
+		values(tbl_official_leave_seq.nextval, #{startDate}, #{endDate}, #{reason}, #{fk_memberNo})
+	</insert>
+	
+	<insert id="add_withFile" parameterType="com.project.skyuniversity.eunji.model.OfficialLeaveVO">
+		insert into tbl_official_leave(leaveno, startdate, enddate, starttime, endtime, reason, fk_memberno, filename, orgfilename, filesize)
+		values(tbl_official_leave_seq.nextval, #{startDate}, #{endDate}, #{startTime}, #{endTime}, #{reason}, #{fk_memberNo}, #{fileName}, #{orgFileName}, #{fileSize})
+	</insert>
+	
+	<insert id="add_withFileNonTime" parameterType="com.project.skyuniversity.eunji.model.OfficialLeaveVO">
+		insert into tbl_official_leave(leaveno, startdate, enddate, reason, fk_memberno, filename, orgfilename, filesize)
+		values(tbl_official_leave_seq.nextval, #{startDate}, #{endDate}, #{reason}, #{fk_memberNo}, #{fileName}, #{orgFileName}, #{fileSize})
+	</insert>
+	
+	<select id="selectOfficial" resultType="com.project.skyuniversity.eunji.model.OfficialLeaveVO" parameterType="String">
+		select leaveNo, to_char(startDate, 'yyyy-mm-dd') as startDate, to_char(endDate, 'yyyy-mm-dd') as endDate, reason, approve, approveDate, noReason, to_char(regdate, 'yyyy-mm-dd') as regdate
+		from tbl_official_leave
+		<![CDATA[where add_months(sysdate, -3) <= regdate]]> and fk_memberno = #{string}
+		order by  regdate desc
+	</select>
+	
+	<delete id="delOfficialLeave" parameterType="String">
+		delete from tbl_official_leave where leaveno=#{seq}
+	</delete>
+	
+	<resultMap type="HashMap" id="leaveMap">
+		<result property="name" column="name" javaType="String"/>
+		<result property="memberno" column="memberno" javaType="String"/>
+		<result property="grade" column="grade" javaType="String"/>
+		<result property="deptname" column="deptname" javaType="String"/>
+		<result property="filename" column="filename" javaType="String"/>
+		<result property="orgfilename" column="orgfilename" javaType="String"/>
+		<result property="filesize" column="filesize" javaType="String"/>
+		<result property="leaveNo" column="leaveNo" javaType="String"/>
+		<result property="startDate" column="startDate" javaType="String"/>
+		<result property="endDate" column="endDate" javaType="String"/>
+		<result property="reason" column="reason" javaType="String"/>
+		<result property="approve" column="approve" javaType="String"/>
+		<result property="approveDate" column="approveDate" javaType="String"/>
+		<result property="noReason" column="noReason" javaType="String"/>
+	</resultMap>
+	<select id="selectLeaveInfo" parameterType="HashMap" resultMap="leaveMap">
+		select name, memberno, grade, deptname, filename, orgfilename, filesize, leaveNo, startDate, endDate, reason, approve, approveDate, noReason
+		from
+		(
+		select rownum as rno, name, memberno, grade, deptname, filename, orgfilename, filesize, leaveNo, startDate, endDate, reason, approve, approveDate, noReason, regdate, regyear, regmonth
+		from
+		(
+		    select name, memberno, grade, deptname, filename, orgfilename, filesize, leaveNo, to_char(startDate, 'yyyy-mm-dd') as startDate, to_char(regdate, 'yyyy') as regyear,to_char(regdate, 'mm') as regmonth, to_char(endDate, 'yyyy-mm-dd') as endDate, reason, approve, approveDate, noReason, to_char(regdate, 'yyyy-mm-dd') as regdate
+		    from 
+		    (
+		    select name, memberno, grade, deptname
+		    from tbl_member M
+		    inner join tbl_dept D
+		    on M.fk_deptseq = D.deptseq
+		    )V
+		    inner join tbl_official_leave O
+		    on V.memberno = O.fk_memberno
+		    where fk_memberno = #{memberno}
+		    order by regdate desc
+		)
+		where approve in ('승인완료','승인취소') and regyear = #{year} and regmonth in (${month})
+		)
+
+	</select>
+	
+	<select id="getLeaveVO" parameterType="String" resultType="com.project.skyuniversity.eunji.model.OfficialLeaveVO">
+		select startDate, endDate, reason, approve, noReason, approveDate, fileName, orgFileName, fileSize, regdate, fk_memberNo
+        from tbl_official_leave
+        where leaveNo=#{seq}
+	</select>
+	
+	<select id="checkDate" parameterType="HashMap" resultType="int">
+		 select count(*)
+ 		 from tbl_official_leave
+ 		 where fk_memberno = #{memberno} and (startdate between #{startdate} and #{enddate} or enddate between #{startdate} and #{enddate})
+	</select>
+	
+	<insert id="insertGirlLeave" parameterType="com.project.skyuniversity.eunji.model.GirlOfficialLeaveVO">
+		insert into tbl_girl_leave(girlLeaveNo, startDate, endDate, fk_memberno)
+		values(tbl_girl_leave_seq.nextval, #{startDate}, #{endDate}, #{fk_memberno})
+	</insert>
+	
+	<insert id="insertGirlLeaveTime" parameterType="com.project.skyuniversity.eunji.model.GirlOfficialLeaveVO">
+		insert into tbl_girl_leave(girlLeaveNo, startDate, endDate, fk_memberno, startTime, endTime)
+		values(tbl_girl_leave_seq.nextval, #{startDate}, #{endDate}, #{fk_memberno}, #{startTime}, #{endTime})
+	</insert>
+	
+	<select id="selectGirlList" parameterType="int" resultType="com.project.skyuniversity.eunji.model.GirlOfficialLeaveVO">
+		select girlLeaveNo, to_char(regDate, 'yyyy-mm-dd') as regDate, to_char(startDate, 'yyyy-mm-dd') as startDate, startTime, endTime, approve, noreason
+        from tbl_girl_leave
+        <![CDATA[where add_months(sysdate, -12) <= regdate]]> and fk_memberno = #{memberNo}	
+		order by  regdate desc
+	</select>
+	
+	<select id="checkGirlDate" parameterType="HashMap" resultType="int">
+		select count(*)
+        from tbl_girl_leave
+        where fk_memberno = #{memberno} and to_char(startDate,'yyyy')=#{year} and to_char(startDate,'mm') = #{month}
+	</select>
+	
+	<delete id="delGirlOfficialLeave" parameterType="String">
+		delete from tbl_girl_leave where girlleaveno = #{seq}
+	</delete>
+	
+	<resultMap type="HashMap" id="checkMap">
+		<result property="courseyear" column="courseyear" javaType="String"/>
+		<result property="semester" column="semester" javaType="String"/>
+		<result property="fk_subjectno" column="fk_subjectno" javaType="String"/>
+		<result property="subjectname" column="subjectname" javaType="String"/>
+		<result property="name" column="name" javaType="String"/>
+		<result property="courseno" column="courseno" javaType="String"/>
+		<result property="classchk" column="classchk" javaType="String"/>
+	</resultMap>
+	<select id="selectCheckList" parameterType="HashMap" resultMap="checkMap">
+		select courseyear, semester, fk_subjectno, subjectname, name, courseno, classchk
+        from
+        (
+        select courseno, courseyear, semester, fk_subjectno, subjectname, fk_professorno, classchk
+        from tbl_course C
+        inner join tbl_subject S
+        on C.fk_subjectno = S.subjectno 
+        where C.fk_memberno = #{memberno} and courseyear=#{year} and semester = #{semester}
+        ) V
+        inner join tbl_professor p
+        on V.fk_professorno = P.professorno
+	</select>
+	
+	<insert id="insertClassCheck" parameterType="com.project.skyuniversity.eunji.model.ClassCheckVO">
+		 insert into tbl_class_check(fk_courseno, firstqs, secondqs, thirdqs, fourqs, fiveqs, sixqs, sevenqs, eightqs,checkKind
+		 <if test="#{etc} != null">, etc</if>)
+         values(#{fk_courseno}, #{firstQs},#{secondQs}, #{thirdQs}, #{fourQs}, #{fiveQs}, #{sixQs}, #{sevenQs}, #{eightQs}, #{checkKind}
+         <if test="#{etc} != null">, #{etc}</if>)
+	</insert>
+	
+	<update id="updateCourseCk" parameterType="int">
+		update tbl_course set classchk = '1' where courseno = #{fk_courseno}
+	</update>
+	
+	<resultMap type="HashMap" id="allMember">
+		<result property="currentSemester" column="currentSemester" javaType="String"/>
+		<result property="name" column="name" javaType="String"/>
+		<result property="memberNo" column="memberNo" javaType="String"/>
+		<result property="deptName" column="deptName" javaType="String"/>
+		<result property="birth" column="birth" javaType="String"/>
+		<result property="grade" column="grade" javaType="String"/>
+		<result property="mobile" column="mobile" javaType="String"/>
+		<result property="email" column="email" javaType="String"/>
+		<result property="address" column="address" javaType="String"/>
+		<result property="detailaddress" column="detailaddress" javaType="String"/>
+		<result property="extraaddress" column="extraaddress" javaType="String"/>
+		<result property="status" column="status" javaType="String"/>
+		<result property="graduateok" column="graduateok" javaType="String"/>
+		<result property="deptseq" column="deptseq" javaType="String"/>
+	</resultMap>
+	<select id="allMemberInfo" parameterType="int" resultMap="allMember">
+		select deptseq, currentSemester, name, memberNo, deptName, birth, grade, mobile, email, address, detailaddress, extraaddress, status, graduateok
+        from 
+        (
+        select deptseq, currentSemester, name, memberNo, deptName, birth, grade, mobile, email, address, detailaddress, extraaddress, fk_regseq, graduateok
+		from tbl_member M
+		inner join tbl_dept D
+		on M.fk_deptseq = D.deptseq
+        where memberNo = #{memberNo}
+        )V
+        inner join tbl_school_reg R
+        on V.fk_regseq = R.regseq
+	</select>
+	
+	<insert id="insertArmyLeave" parameterType="com.project.skyuniversity.eunji.model.SchoolLeaveVO">
+		insert into tbl_school_leave(startsemester, schoolLvNo, armytype, armystartdate, armyenddate, filename, orgfilename, filesize, comeSemester, type, fk_memberno)
+        values(#{startSemester}, tbl_school_leave_seq.nextval, #{armyType}, #{armyStartDate}, #{armyEndDate}, #{filename}, #{orgfilename}, #{filesize}, #{comeSemester},'군휴학', #{fk_memberNo})
+	</insert>
+	
+	<insert id="insertLeave" parameterType="HashMap">
+		insert into tbl_school_leave(schoolLvNo, startsemester, endsemester, reason, comesemester, type, fk_memberno)
+		values(tbl_school_leave_seq.nextval, #{startsemester}, #{endsemester}, #{reason}, #{comesemester},'일반휴학', #{memberNo})
+	</insert>
+	
+	<select id="selectSchoolLeave" parameterType="int" resultType="com.project.skyuniversity.eunji.model.SchoolLeaveVO">
+		select schoolLvNo, startSemester, to_char(regdate, 'yyyy-mm-dd') as regdate, type, comeSemester, approve, filename, orgfilename, filesize, noreason
+        from tbl_school_leave
+        where fk_memberno = #{memberNo}
+	</select>
+	
+	<select id="getSchoolLeaveVO" parameterType="String" resultType="com.project.skyuniversity.eunji.model.SchoolLeaveVO">
+		select to_char(armyStartDate, 'yyyy-mm-dd') as armyStartDate, to_char(armyEndDate, 'yyyy-mm-dd') as armyEndDate, armyType, schoolLvNo, startSemester, to_char(regdate, 'yyyy-mm-dd') as regdate, type, comeSemester, approve, filename, orgfilename, filesize, noreason, endSemester, reason
+        from tbl_school_leave
+        where schoolLvNo = #{seq}
+	</select>
+	
+	<delete id="deleteSchoolInfo" parameterType="String">
+		delete from tbl_school_leave where schoolLvNo=#{no}
+	</delete>
+	
+	<update id="updateArmyType" parameterType="com.project.skyuniversity.eunji.model.SchoolLeaveVO">
+		update tbl_school_leave set armytype = #{armyType}, armyStartDate = #{armyStartDate}, armyEndDate = #{armyEndDate}, comeSemester = #{comeSemester}, startSemester = #{startSemester}
+		<if test="filename != null">,filename = #{filename}, orgfilename = #{orgfilename}, filesize = #{filesize}</if>
+		where schoolLvNo = #{schoolLvNo}
+	</update>
+	
+	<update id="updateLeaveSchool" parameterType="com.project.skyuniversity.eunji.model.SchoolLeaveVO">
+		update tbl_school_leave set startsemester = #{startSemester}, endsemester = #{endSemester}, reason = #{reason}, comesemester = #{comeSemester}
+		where schoolLvNo = #{schoolLvNo}
+	</update>
+	
+	<select id="checkLeave" parameterType="HashMap" resultType="int">
+		select count(*)
+        from tbl_school_leave
+        where startsemester = #{startsemester} and fk_memberno = #{memberNo}
+	</select>
+
+	<select id="comeSchoolInfo" parameterType="HashMap" resultType="com.project.skyuniversity.eunji.model.SchoolLeaveVO">
+		select startSemester, to_char(regdate, 'yyyy-mm-dd') as regdate, type, comeSemester, to_char(armyStartDate, 'yyyy-mm-dd') as armyStartDate, to_char(armyEndDate, 'yyyy-mm-dd') as armyEndDate
+        from tbl_school_leave
+        where fk_memberno = #{memberno} and comesemester = #{comesem} and comeSchool = 0
+	</select>
+	
+	<insert id="insertComeSchool" parameterType="HashMap">
+		insert into tbl_come_school(comeseq, comesemester, type, fk_memberno)
+		values(tbl_come_school_seq.nextval, #{comesemester}, #{type}, #{memberno})
+	</insert>
+	
+	<select id="checkComeSchool" parameterType="HashMap" resultType="int">
+		select count(*)
+        from tbl_come_school
+        where comesemester = #{comesemester} and fk_memberno = #{memberno}
+	</select>
+	
+	<select id="selectEndComeSchool" parameterType="int" resultType="com.project.skyuniversity.eunji.model.ComeSchoolVO">
+		select comeSeq, comeSemester, to_char(regdate, 'yyyy-mm-dd') as regDate, type, approve, approveDate, fileName, orgFileName, fileSize, fk_Memberno, noReason
+        from tbl_come_school
+        where fk_memberno = #{memberNo}
+	</select>
+	
+	<insert id="insertComeSchoolArmy" parameterType="com.project.skyuniversity.eunji.model.ComeSchoolVO">
+		insert into tbl_come_school(comeseq, comesemester, type, fk_memberno, filename, orgfilename, filesize)
+		values(tbl_come_school_seq.nextval, #{comeSemester}, #{type}, #{fk_Memberno}, #{fileName}, #{orgFileName}, #{fileSize})
+	</insert>
+	
+	<delete id="deleteComeSchool" parameterType="String">
+		delete from tbl_come_school where comeseq = #{seq}
+	</delete>
+	
+	<select id="getComeSchoolVO" parameterType="String" resultType="com.project.skyuniversity.eunji.model.ComeSchoolVO">
+		select filename, orgfilename, filesize
+		from tbl_come_school
+		where comeseq = #{seq}
+	</select>
+	
+	<select id="sumSemester" parameterType="int" resultType="int">
+		select sum(credits)
+        from(
+        select fk_subjectno
+        from tbl_course
+        where fk_memberno = #{memberNo}
+        )V
+        inner join tbl_subject S
+        on S.subjectno = V.fk_subjectno
+	</select>
+	
+	<select id="sumMajorCredits" parameterType="int" resultType="int">
+		select sum(credits)
+        from(
+        select fk_subjectno
+        from tbl_course
+        where fk_memberno = #{memberNo}
+        )V
+        inner join tbl_subject S
+        on S.subjectno = V.fk_subjectno 
+        where fk_deptseq != '23'
+	</select>
+	
+	<select id="sumCultureCredits" parameterType="int" resultType="int">
+		select sum(credits)
+        from(
+        select fk_subjectno
+        from tbl_course
+        where fk_memberno = #{memberNo}
+        )V
+        inner join tbl_subject S
+        on S.subjectno = V.fk_subjectno 
+        where fk_deptseq = '23'
+	</select>
+	
+	<resultMap type="HashMap" id="subjectsNoMap">
+		<result property="deptname" column="deptname" javaType="String"/>
+		<result property="subjectname" column="subjectname" javaType="String"/>
+		<result property="subjectno" column="subjectno" javaType="String"/>
+		<result property="name" column="name" javaType="String"/>
+		<result property="credits" column="credits" javaType="String"/>
+		<result property="day" column="day" javaType="String"/>
+		<result property="period" column="period" javaType="String"/>
+		<result property="peoplecnt" column="peoplecnt" javaType="String"/>
+		<result property="grade" column="grade" javaType="String"/>
+		<result property="curpeoplecnt" column="curpeoplecnt" javaType="String"/>
+	</resultMap>
+	<select id="getSubjectListNo" resultMap="subjectsNoMap">
+		select deptname, subjectname, subjectno, name, credits, day, period, peoplecnt, grade, curpeoplecnt, subssemester
+		from
+		(
+		select p.name, subjectno, subjectname, credits, day, period, peoplecnt, fk_deptseq, grade, curpeoplecnt, subssemester
+		from tbl_subject S
+		inner join tbl_professor P
+		on S.fk_professorno = p.professorno
+        where subjectno = #{no}
+		) V
+		inner join tbl_dept D
+		on V.fk_deptseq = D.deptseq
+	</select>
+	
+	<select id="getMustSubject" parameterType="HashMap" resultType="String">
+		select subjectname
+        from tbl_subject
+        where muststatus = '0' and (fk_deptseq = #{deptseq} or fk_deptseq = '23')
+	</select>
+	
+	<select id="getMyMustSubejct" parameterType="HashMap" resultType="String">
+		select subjectname
+        from tbl_subject S
+        inner join tbl_course C
+        on S.subjectno = C.fk_subjectno
+        where C.fk_memberno = #{memberNo} and muststatus = '0'
+	</select>
+	
+	<select id="getMustSubjectdept" parameterType="HashMap" resultType="String">
+		select fk_deptseq
+        from tbl_subject
+        where muststatus = '0' and (fk_deptseq = '2' or fk_deptseq = '23')
+	</select>
+	
+	<select id="updateGraduateOk" parameterType="int">
+		update tbl_member set graduateok = '1' where memberno = #{memberNo}
+	</select>
+	
+	<insert id="insertGraduateDelay" parameterType="com.project.skyuniversity.eunji.model.GraduateDelayVO">
+		insert into tbl_graduate_delay(delayNo, reason, startsem, endsem, fk_memberno)
+		values(tbl_graduate_delay_seq.nextval, #{reason}, #{startSem}, #{endSem}, #{fk_memberno})
+	</insert>
+	
+	<select id="selectGraduateList" parameterType="int" resultType="com.project.skyuniversity.eunji.model.GraduateDelayVO">
+		select to_char(regdate, 'yyyy-mm-dd') as regDate, startSem, endSem, approve, noreason, delayNo
+		from tbl_graduate_delay
+		where fk_memberno = #{memberNo}
+	</select>
+	
+	<select id="checkDelay" parameterType="com.project.skyuniversity.eunji.model.GraduateDelayVO" resultType="int">
+		select count(*)
+        from tbl_graduate_delay
+        where fk_memberno =#{fk_memberno} and startsem = #{startSem}
+	</select>
+	
+	<delete id="deleteGraduateDelay" parameterType="String">
+		delete from tbl_graduate_delay where delayNo = #{seq}
+	</delete>
+	
+	<select id="getFGrade" parameterType="int" resultType="int">
+		select count(*)
+        from tbl_course
+        where fk_memberno=#{memberNo} and score ='F'
+	</select>
+	
+	<select id="getAllGrade" parameterType="int" resultType="String">
+		select score
+        from tbl_course
+        where fk_memberno=#{memberNo}
+        order by courseno asc
+	</select>
+	
+	<select id="getAllCredit" parameterType="int" resultType="String">
+		select credits
+        from(
+        select fk_subjectno, courseno
+        from tbl_course
+        where fk_memberno = #{memberNo}
+        )V
+        inner join tbl_subject S
+        on S.subjectno = V.fk_subjectno
+        order by courseno asc
+	</select>
+	
+	<insert id="insertGraduateEarly" parameterType="com.project.skyuniversity.eunji.model.GraduateEarlyVO">
+		insert into tbl_graduate_early(earlyno, sumcredit, sumsem, avggrade, fk_memberno)
+		values(tbl_graduate_early_seq.nextval, #{sumCredit}, #{sumSem}, #{avgGrade}, #{fk_memberno})
+	</insert>
+	
+	<select id="selectGraduateEarly" parameterType="int" resultType="com.project.skyuniversity.eunji.model.GraduateEarlyVO">
+		select earlyNo, regDate, sumCredit, sumSem, avgGrade, approve, approveDate, noreason
+		from tbl_graduate_early
+		where fk_memberno = #{memberNo}
+	</select>
+	
+	<delete id="deleteGraduateEarly" parameterType="String">
+		delete from tbl_graduate_early where earlyNo = #{seq}
+	</delete>
+	
+	<select id="getNowSubject" parameterType="HashMap" resultType="String">
+		select subjectname
+        from tbl_subject S
+        inner join tbl_course C
+        on S.subjectno = C.fk_subjectno
+        where C.fk_memberno = #{memberno} and courseyear = #{year} and semester = #{semester} 
+	</select>
+	
+	<select id="selectHomework" parameterType="HashMap" resultType="com.project.skyuniversity.eunji.model.HomeworkVO">
+		select fk_subjectno, subject, contents, to_char(startdate, 'yyyy-mm-dd') as startDate, to_char(enddate, 'yyyy-mm-dd') as endDate, subjectname
+		from 
+		(
+		select subjectno, subjectname
+		from tbl_subject S
+		inner join tbl_course C
+		on S.subjectno = C.fk_subjectno
+		where C.fk_memberno = #{memberno} and courseyear = #{year} and semester = #{semester}
+		)V
+		inner join tbl_homework H
+		on V.subjectno = H.fk_subjectno
+	</select>
+</mapper>

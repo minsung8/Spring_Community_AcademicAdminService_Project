@@ -1,0 +1,1988 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<!-- ==== #29. mapper 기본설정 ==== -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- ==== #29. 루트 엘리먼트 & 네임스페이스 설정(프로젝트 전체내에서 유일해야 한다.) ==== -->
+<mapper namespace="ohyoon">
+
+	<!-- 게시판 번호를 입력하여 해당 게시판 번호에 해당하는 테이블명 가져오기 -->
+	<select id="getBoardName" parameterType="int" resultType="String">
+		select boardName
+      	from tbl_boardKind
+      	where boardkindno = #{boardKindNo}
+	</select>
+	
+	<!-- 게시판 번호를 입력하여 해당 게시판번호에 해당하는 카테고리들을 불러오기 -->
+	<select id="getCategoryList" parameterType="int" resultType="com.project.skyuniversity.ohyoon.model.CategoryVO">
+		select categoryNo, fk_boardkindno, categoryName 
+		from tbl_category
+		where fk_boardkindno = #{boardKindNo}
+	</select>
+	
+	
+	<!-- 각 테이블마다 게시글들을 받아오기 -->
+	<select id="getAnonymousBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, nickname as fk_nickname, subject, regDate, editDate
+         	 , content, readCount, status, upCount, cmtCount, writerIp
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, fk_boardKindNo, nickname, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status, upCount, writerIp
+		         , (select count(*) from tbl_comment_anonymous where fk_boardNo = boardNo and status = 1) as cmtCount
+		    from tbl_board_anonymous
+			where status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getInformalBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_informal where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_commu_member M join tbl_board_informal V  
+	    	on V.fk_memberNo = M.fk_memberNo
+	    	join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getPoliteBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_polite where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_commu_member M join tbl_board_polite V  
+	    	on V.fk_memberNo = M.fk_memberNo
+	    	join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getHumorBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_humor where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_humor V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getIssueBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_issue where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_issue V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getMbtiBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_mbti where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_mbti V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getFoodBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_food where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_food V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getLoveBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_love where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_love V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getHobbyBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_hobby where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_hobby V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getHealthBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		    	 , levelImg
+		    	 , (select count(*) from tbl_comment_health where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_health V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	<select id="getDietBoardList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select rno, boardNo, fk_boardKindNo, fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, regDate, editDate
+		         , content, readCount, status, upCount, levelImg, cmtCount
+		from 
+		(
+		    select row_number() over(order by boardno desc)  as rno, boardNo, V.fk_boardKindNo, V.fk_memberNo, M.nickname, C.categoryName, subject
+		         , case when to_char(sysdate , 'yyyymmdd') - to_char(regDate , 'yyyymmdd') >= 1 then to_char(regDate, 'yyyy-mm-dd')
+		                when to_char(sysdate, 'hh24') - to_char(regDate, 'hh24') >= 1 then to_char(to_char(sysdate, 'hh24') - to_char(regDate, 'hh24'))||'시간 전'
+		                else to_char(to_char(sysdate, 'mi') - to_char(regDate, 'mi'))||'분 전' end as regDate
+		         , to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+		         , content, readCount, status
+		         , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+		         , levelImg
+		         , (select count(*) from tbl_comment_diet where fk_boardNo = V.boardNo and status = 1) as cmtCount
+		    from tbl_category C join tbl_board_diet V 
+		    on C.categoryNo = V.fk_categoryNo
+		    join tbl_commu_member M 
+		    on V.fk_memberNo = M.fk_memberNo
+		    join tbl_commu_member_level L
+            on M.fk_levelNo = L.levelNo
+		    where V.status = 1
+		    <if test='searchWord != "" '>
+            and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+            </if>
+            <if test='categoryNo != "0" '>
+	        and fk_categoryNo = ${categoryNo}
+	        </if>
+		)T
+		where rno between #{startRno} and #{endRno}
+		order by rno asc
+	</select>
+	
+	
+	<!-- 총 게시물 건수 알아오기 -->
+	<select id="getAnonymousTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_anonymous
+		where status = 1
+		<if test='searchWord != "" '>
+        and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+        </if>
+	</select>
+	<select id="getInformalTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_informal V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != "" '>
+        and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+        </if>
+	</select>
+	<select id="getPoliteTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_polite V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+	</select>
+	<select id="getHumorTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_humor V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	<select id="getIssueTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_issue V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	<select id="getMbtiTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_mbti V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	<select id="getFoodTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_food V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	<select id="getLoveTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_love V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	<select id="getHobbyTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_hobby V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	<select id="getHealthTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_health V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	<select id="getDietTotalCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_diet V join tbl_commu_member M
+		on V.fk_memberNo = M.fk_memberNo
+		where status = 1
+		<if test='searchWord != ""'>
+		and lower(${searchType}) like '%' || lower(#{searchWord}) || '%'
+		</if>
+		<if test='categoryNo != "0" '>
+        and fk_categoryNo = ${categoryNo}
+        </if>
+	</select>
+	
+	
+	<!-- 파일 첨부가 없는 글쓰기 -->
+	<insert id="addAnonymousBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_anonymous(boardNo, fk_boardKindNo, nickname, subject, password, content, writerIp)
+		values(tbl_board_anonymous_seq.nextval, ${fk_boardKindNo}, #{fk_nickname}, #{subject}, #{password}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addInformalBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_informal(boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addPoliteBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_polite(boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp)
+		values(tbl_board_polite_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addHumorBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_humor(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addIssueBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_issue(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addMbtiBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_mbti(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addFoodBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_food(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addLoveBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_love(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addHobbyBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_hobby(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addHealthBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_health(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	<insert id="addDietBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_diet(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp})
+	</insert>
+	
+		
+	<!-- 파일 첨부가 있는 글쓰기 -->
+	<insert id="addInformalBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_informal(boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addPoliteBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_polite(boardNo, fk_boardKindNo, fk_memberNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_informal_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addHumorBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_humor(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addIssueBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_issue(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addMbtiBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_mbti(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addFoodBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_food(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addLoveBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_love(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addHobbyBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_hobby(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addHealthBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_health(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	<insert id="addDietBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		insert into tbl_board_diet(boardNo, fk_boardKindNo, fk_memberNo, fk_categoryNo, subject, content, writerIp, fileName, orgFilename, fileSize)
+		values(tbl_board_humor_seq.nextval, ${fk_boardKindNo}, ${fk_memberNo}, #{fk_categoryNo}, #{subject}, #{content}, #{writerIp}, #{fileName}, #{orgFilename}, #{fileSize})
+	</insert>
+	
+	
+	<!-- 회원 번호와 포인트를 받아와 회원 포인트를 올려주기 -->
+	<update id="pointPlus" parameterType="HashMap">
+		update tbl_commu_member set point = point + ${point}
+		where fk_memberNo = #{fk_memberNo}
+	</update>
+	
+	<!-- 회원번호로 회원의 포인트와 레벨 등을 불러오기 -->
+	<resultMap type="HashMap" id="pointCheck"> <!-- property는 HashMap의 키값이며 column이 컬럼명이다. -->
+		<result property="fk_memberNo" column="fk_memberNo" javaType="int" />
+		<result property="fk_levelNo" column="fk_levelNo" javaType="int" />
+		<result property="currentPoint" column="currentPoint" javaType="int" />
+		<result property="nextLevelNo" column="nextLevelNo" javaType="int" />
+		<result property="nextLevelPoint" column="nextLevelPoint" javaType="int" />
+	</resultMap>
+	
+	<select id="pointCheck" parameterType="String" resultMap="pointCheck">
+		select fk_memberNo, fk_levelNo, point as currentPoint, levelNo as nextLevelNo, levelPoint as nextLevelPoint
+		from tbl_commu_member M join tbl_commu_member_level L
+		on M.fk_levelNo = (L.levelNo - 1)
+		where fk_memberNo = #{fk_memberNo}
+	</select>
+	
+	<!-- 회원의 포인트와 레벨을 올려주기 -->
+	<update id="pointPlusWithLevel" parameterType="HashMap">
+		update tbl_commu_member set point = point + ${point}, fk_levelNo = ${nextLevelNo}
+		where fk_memberNo = #{fk_memberNo}
+	</update>
+	
+	
+	<!-- 게시물 1개 조회하기 -->
+	<select id="getViewAnonymous" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, fk_boardKindNo, nickname as fk_nickname, subject, password
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, upCount, downCount
+			 , (select count(*) from tbl_comment_anonymous where fk_boardNo = boardNo and status = 1) as cmtCount
+		from tbl_board_anonymous V  
+		where status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewInformal" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, subject
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+			 , levelImg
+		from tbl_commu_member M join tbl_board_informal V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewPolite" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, subject
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_polite V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewHumor" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_humor V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewIssue" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_Issue V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewMbti" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_mbti V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewFood" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_food V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewLove" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_love V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewHobby" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_hobby V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewHealth" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_health V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	<select id="getViewDiet" parameterType="String" resultType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		select boardNo, V.fk_boardKindNo, V.fk_memberNo, nickname as fk_nickname, categoryName as fk_categoryName, subject, V.fk_categoryNo, C.categoryName
+		     , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') as regDate, to_char(editDate, 'yyyy-mm-dd hh24:mi:ss') as editDate
+			 , content, readCount, status, fileName, orgFilename, fileSize
+			 , (select count(*) from tbl_board_good where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as upCount
+             , (select count(*) from tbl_board_bad where fk_boardKindNo = V.fk_boardKindNo and fk_boardNo = boardNo) as downCount
+             , levelImg
+		from tbl_commu_member M join tbl_board_diet V  
+		on V.fk_memberNo = M.fk_memberNo
+		join tbl_category C
+		on V.fk_categoryNo = C.categoryNo
+		join tbl_commu_member_level L
+        on M.fk_levelNo = L.levelNo
+		where V.status = 1 and boardNo = #{boardNo}
+	</select>
+	
+	
+	<!-- 게시물 조회수 증가시키기 -->
+	<update id="addReadCountAnonymous" parameterType="String">
+		update tbl_board_anonymous set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountInformal" parameterType="String">
+		update tbl_board_informal set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountPolite" parameterType="String">
+		update tbl_board_polite set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountHumor" parameterType="String">
+		update tbl_board_humor set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountIssue" parameterType="String">
+		update tbl_board_issue set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountMbti" parameterType="String">
+		update tbl_board_mbti set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountFood" parameterType="String">
+		update tbl_board_food set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountLove" parameterType="String">
+		update tbl_board_love set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountHobby" parameterType="String">
+		update tbl_board_hobby set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountHealth" parameterType="String">
+		update tbl_board_health set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	<update id="addReadCountDiet" parameterType="String">
+		update tbl_board_diet set readCount = readCount + 1
+		where boardNo = #{boardNo}
+	</update>
+
+
+	<!-- 게시글의 추천수를 가져온다. -->
+	<select id="getBoardGoodCount" parameterType="HashMap" resultType="int">
+		select count(*) as upCount
+		from tbl_board_good
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo}
+	</select>
+	<select id="getAnonymousBoardGoodCount" parameterType="String" resultType="int">
+		select upCount
+		from tbl_board_anonymous
+		where boardNo = #{boardNo}
+	</select>
+	
+	<!-- 게시글의 비추천수를 가져온다. -->
+	<select id="getBoardBadCount" parameterType="HashMap" resultType="int">
+		select count(*) as downCount
+		from tbl_board_bad
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo}
+	</select>
+	<select id="getAnonymousBoardBoardBadCount" parameterType="String" resultType="int">
+		select downCount
+		from tbl_board_anonymous
+		where boardNo = #{boardNo}
+	</select>
+	
+	
+	<!-- 익명게시판의 추천 컬럼을 1증가시킨다. -->
+	<update id="addAnonymousBoardUp" parameterType="String">
+		update tbl_board_anonymous set upCount = upCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<!-- 게시글 비추천 테이블에서 paraMap으로 넘어온 값을 가진 행을 삭제한다. -->
+	<delete id="deleteBoardBad" parameterType="HashMap">
+		delete from tbl_board_bad
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo} and fk_memberNo = ${memberNo}
+	</delete>
+	
+	<!-- 게시글 추천 테이블에 행을 추가한다. -->
+	<insert id="addBoardUp" parameterType="HashMap">
+		insert into tbl_board_good
+		values(${boardKindNo}, ${boardNo}, ${memberNo})
+	</insert>
+	
+	<!-- 익명게시판의 비추천 컬럼을 1증가시킨다. -->
+	<update id="addAnonymousBoardDown" parameterType="String">
+		update tbl_board_anonymous set downCount = downCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<!-- 게시글 추천 테이블에서 paraMap으로 넘어온 값을 가진 행을 삭제한다. -->
+	<delete id="deleteBoardGood" parameterType="HashMap">
+		delete from tbl_board_good
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo} and fk_memberNo = ${memberNo}
+	</delete>
+	
+	<!-- 게시글 비추천 테이블에 행을 추가한다. -->
+	<insert id="addBoardDown" parameterType="HashMap">
+		insert into tbl_board_bad
+		values(${boardKindNo}, ${boardNo}, ${memberNo})
+	</insert>
+	
+	<!-- 익명게시판의 신고수 컬럼을 1증가시킨다. -->
+	<update id="addAnonymousBoardReport" parameterType="String">
+		update tbl_board_anonymous set reportCount = reportCount + 1
+		where boardNo = #{boardNo}
+	</update>
+	
+	<!-- 게시글 신고 테이블에 행을 추가한다. -->
+	<insert id="addBoardReport" parameterType="HashMap">
+		insert into tbl_board_report
+		values(${boardKindNo}, ${boardNo}, ${memberNo})
+	</insert>
+	
+	<!-- 신고한 게시글의 신고 개수를 알아온다. -->
+	<select id="getReportCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_board_report
+		where fk_boardKindNo = ${boardKindNo} and fk_boardNo = ${boardNo}
+	</select>
+	<select id="getAnonymousReportCount" parameterType="String" resultType="int">
+		select reportCount
+		from tbl_board_anonymous
+		where boardNo = #{boardNo}
+	</select>
+	
+	<!-- 게시글의 상태를 0으로 update한다. -->
+	<update id="updateAnonymousBoardStatus" parameterType="String">
+		update tbl_board_anonymous set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateInformalBoardStatus" parameterType="String">
+		update tbl_board_informal set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updatePoliteBoardStatus" parameterType="String">
+		update tbl_board_polite set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHumorBoardStatus" parameterType="String">
+		update tbl_board_humor set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateIssueBoardStatus" parameterType="String">
+		update tbl_board_issue set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateMbtiBoardStatus" parameterType="String">
+		update tbl_board_mbti set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateFoodBoardStatus" parameterType="String">
+		update tbl_board_food set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateLoveBoardStatus" parameterType="String">
+		update tbl_board_love set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHobbyBoardStatus" parameterType="String">
+		update tbl_board_hobby set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHealthBoardStatus" parameterType="String">
+		update tbl_board_health set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateDietBoardStatus" parameterType="String">
+		update tbl_board_diet set status = 0
+		where boardNo = #{boardNo}
+	</update>
+	
+	
+	<!-- 게시물의 첨부파일 저장명, 원본명, 파일사이즈를 상태를 null로 update한다. -->
+	<update id="deleteInformalAttach" parameterType="String">
+		update tbl_board_informal set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deletePoliteAttach" parameterType="String">
+		update tbl_board_polite set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteHumorAttach" parameterType="String">
+		update tbl_board_humor set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteIssueAttach" parameterType="String">
+		update tbl_board_issue set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteMbtiAttach" parameterType="String">
+		update tbl_board_mbti set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteFoodAttach" parameterType="String">
+		update tbl_board_food set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteLoveAttach" parameterType="String">
+		update tbl_board_love set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteHobbyAttach" parameterType="String">
+		update tbl_board_hobby set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteHealthAttach" parameterType="String">
+		update tbl_board_health set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	<update id="deleteDietAttach" parameterType="String">
+		update tbl_board_diet set fileName = '', orgFilename = '', fileSize = ''
+		where boardNo = #{boardNo}
+	</update>
+	
+	
+	<!-- 파일 첨부가 없는 글수정 -->
+	<update id="updateAnonymousBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_anonymous set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateInformalBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_informal set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updatePoliteBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_polite set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHumorBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_humor set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateIssueBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_issue set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateMbtiBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_mbti set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateFoodBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_food set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateLoveBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_love set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHobbyBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_hobby set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHealthBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_health set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateDietBoard" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_diet set subject = #{subject}, content = #{content}, editDate = sysdate
+		where boardNo = #{boardNo}
+	</update>
+	
+	
+	<!-- 파일 첨부가 있는 글수정 -->
+	<update id="updateInformalBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_informal set subject = #{subject}, content = #{content}, editDate = sysdate
+									, fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updatePoliteBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_polite set subject = #{subject}, content = #{content}, editDate = sysdate
+								  , fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHumorBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_humor set subject = #{subject}, content = #{content}, editDate = sysdate
+								 , fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateIssueBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_issue set subject = #{subject}, content = #{content}, editDate = sysdate
+								 , fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateMbtiBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_mbti set subject = #{subject}, content = #{content}, editDate = sysdate
+								, fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateFoodBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_food set subject = #{subject}, content = #{content}, editDate = sysdate
+								, fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateLoveBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_love set subject = #{subject}, content = #{content}, editDate = sysdate
+								, fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHobbyBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_hobby set subject = #{subject}, content = #{content}, editDate = sysdate
+								 , fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateHealthBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_health set subject = #{subject}, content = #{content}, editDate = sysdate
+								  , fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	<update id="updateDietBoardWithFile" parameterType="com.project.skyuniversity.ohyoon.model.BoardVO">
+		update tbl_board_diet set subject = #{subject}, content = #{content}, editDate = sysdate
+								, fileName = #{fileName}, orgFilename = #{orgFilename}, fileSize = #{fileSize}	
+		where boardNo = #{boardNo}
+	</update>
+	
+	
+	<!-- 댓글 쓰기 -->
+	<insert id="addNoticeComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_notice(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_notice_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addCouncilComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_council(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_council_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addMajorComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_major(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_major_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addClubComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_club(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_club_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addGraduateComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_graduate(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_graduate_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addCriticComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_critic(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_critic_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addStudyComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_study(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_study_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addCertComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_cert(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_cert_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addEmpComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_emp(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_emp_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addJobofferComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_joboffer(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_joboffer_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addLostComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_lost(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_lost_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addAnonymousComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_anonymous(commentNo, fk_boardNo, nickname, password, cmtContent, writerIp)
+		values(tbl_comment_anonymous_seq.nextval, ${fk_boardNo}, #{fk_nickname}, #{password}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addInformalComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_informal(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_informal_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addPoliteComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_polite(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_polite_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addHumorComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_humor(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_humor_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addIssueComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_issue(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_issue_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addMbtiComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_mbti(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_mbti_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addFoodComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_food(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_food_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addLoveComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_love(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_love_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addHobbyComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_hobby(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_hobby_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addHealthComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_health(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_health_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addDietComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_diet(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_diet_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addHouseMarketComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_housemarket(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_housemarket_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addBookMarketComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_bookmarket(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_bookmarket_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	<insert id="addEtcMarketComment" parameterType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		insert into tbl_comment_etcmarket(commentNo, fk_boardNo, fk_memberNo, cmtContent, writerIp)
+		values(tbl_comment_etcmarket_seq.nextval, ${fk_boardNo}, ${fk_memberNo}, #{cmtContent}, #{writerIp})
+	</insert>
+	
+	
+	<!-- 각 테이블마다 댓글들을 받아오기 -->
+	<select id="getNoticeCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_notice where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_notice V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getCouncilCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_council where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_council V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getMajorCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_major where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_major V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getClubCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_club where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_club V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getGraduateCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_graduate where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_graduate V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getCriticCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_critic where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_critic V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getStudyCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_study where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_study V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getCertCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_cert where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_cert V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getEmpCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_emp where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_emp V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getJobofferCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_joboffer where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_joboffer V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getLostCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_lost where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_lost V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getAnonymousCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_nickname, cmtContent, regDate
+		     , (select count(*) from tbl_comment_anonymous where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , cmtUpCount
+             , cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, commentNo, fk_boardNo
+		         , nickname AS fk_nickname, cmtUpCount, cmtDownCount, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_comment_anonymous  
+			where status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getInformalCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_informal where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_informal V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo} 
+		order by rno asc
+	</select>
+	<select id="getPoliteCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_polite where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_polite V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getHumorCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_humor where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_humor V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getIssueCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_issue where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_issue V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getMbtiCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_mbti where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_mbti V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getFoodCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_food where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_food V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getLoveCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_love where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_love V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getHobbyCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_hobby where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_hobby V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getHealthCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_health where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_health V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getDietCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_diet where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_diet V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getHouseMarketCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_housemarket where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_housemarket V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getBookMarketCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_bookmarket where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_bookmarket V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	<select id="getEtcMarketCommentList" parameterType="HashMap" resultType="com.project.skyuniversity.ohyoon.model.CommentVO">
+		select rno, commentNo, fk_boardNo, fk_memberNo, fk_nickname
+		     , levelImg, cmtContent, regDate
+		     , (select count(*) from tbl_comment_etcmarket where status = 1 and fk_boardNo = #{fk_boardNo}) AS totalCount
+		     , (select count(*) from tbl_comment_good where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtUpCount
+             , (select count(*) from tbl_comment_bad where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = commentNo) as cmtDownCount
+		from 
+		(
+		    select row_number() over(order by commentNo desc) AS rno, V.commentNo, V.fk_boardNo
+		         , V.fk_memberNo, M.nickname AS fk_nickname, L.levelImg, cmtContent
+		         , to_char(regDate, 'yyyy-mm-dd hh24:mi:ss') AS regDate
+			from tbl_commu_member M join tbl_comment_etcmarket V  
+			on V.fk_memberNo = M.fk_memberNo
+			join tbl_commu_member_level L
+		    on M.fk_levelNo = L.levelNo
+			where V.status = 1 and fk_boardNo = #{fk_boardNo}
+		)T
+		where rno between #{startNo} and #{endNo}
+		order by rno asc
+	</select>
+	
+	
+	<!-- 댓글의 추천수를 가져온다. -->
+	<select id="getCommentGoodCount" parameterType="HashMap" resultType="int">
+		select count(*) as cmtUpCount
+		from tbl_comment_good
+		where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = #{fk_commentNo}
+	</select>
+	<select id="getAnonymousCommentGoodCount" parameterType="HashMap" resultType="int">
+		select cmtUpCount
+		from tbl_comment_anonymous
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</select>
+	
+	<!-- 댓글의 비추천수를 가져온다. -->
+	<select id="getCommentBadCount" parameterType="HashMap" resultType="int">
+		select count(*) as cmtDownCount
+		from tbl_comment_bad
+		where fk_boardKindNo = #{fk_boardKindNo} and fk_boardNo = #{fk_boardNo} and fk_commentNo = #{fk_commentNo}
+	</select>
+	<select id="getAnonymousCommentBadCount" parameterType="HashMap" resultType="int">
+		select cmtDownCount
+		from tbl_comment_anonymous
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</select>
+
+
+	<!-- 익명게시판 댓글 테이블에서 추천 컬럼의 값을 1 증가시킨다. -->	
+	<update id="addAnonymousCommentUp" parameterType="HashMap">
+		update tbl_comment_anonymous set cmtUpCount = cmtUpCount + 1
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo} 
+	</update>
+		
+	<!-- 댓글 비추천 테이블에서 paraMap으로 넘어온 값을 가진 행을 삭제한다. -->
+	<delete id="deleteCommentBad" parameterType="HashMap">
+		delete from tbl_comment_bad
+		where fk_boardKindNo = ${fk_boardKindNo} and fk_boardNo = ${fk_boardNo} and fk_commentNo = ${fk_commentNo} and fk_memberNo = ${fk_memberNo}
+	</delete>
+	
+	<!-- 댓글 추천 테이블에 행을 추가한다. -->
+	<insert id="addCommentUp" parameterType="HashMap">
+		insert into tbl_comment_good
+		values(${fk_boardKindNo}, ${fk_boardNo}, ${fk_commentNo}, ${fk_memberNo})
+	</insert>
+	
+
+	<!-- 익명게시판 댓글 테이블에서 비추천 컬럼의 값을 1 증가시킨다. -->	
+	<update id="addAnonymousCommentDown" parameterType="HashMap">
+		update tbl_comment_anonymous set cmtDownCount = cmtDownCount + 1
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo} 
+	</update>
+	
+	<!-- 댓글 추천 테이블에서 paraMap으로 넘어온 값을 가진 행을 삭제한다. -->
+	<delete id="deleteCommentGood" parameterType="HashMap">
+		delete from tbl_comment_good
+		where fk_boardKindNo = ${fk_boardKindNo} and fk_boardNo = ${fk_boardNo} and fk_commentNo = ${fk_commentNo} and fk_memberNo = ${fk_memberNo}
+	</delete>
+	
+	<!-- 댓글 비추천 테이블에 행을 추가한다. -->
+	<insert id="addCommentDown" parameterType="HashMap">
+		insert into tbl_comment_bad
+		values(${fk_boardKindNo}, ${fk_boardNo}, ${fk_commentNo}, ${fk_memberNo})
+	</insert>
+	
+
+	<!-- 익명게시판 댓글 테이블에서 신고수 컬럼의 값을 1 증가시킨다. -->	
+	<update id="addAnonymousCommentReport" parameterType="HashMap">
+		update tbl_comment_anonymous set reportCount = reportCount + 1
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo} 
+	</update>
+	
+	<!-- 댓글 신고 테이블에 행을 추가한다. -->
+	<insert id="addCommentReport" parameterType="HashMap">
+		insert into tbl_comment_report
+		values(${fk_boardKindNo}, ${fk_boardNo}, ${fk_commentNo}, ${fk_memberNo})
+	</insert>
+	
+	<!-- 신고한 댓글의 신고 개수를 알아온다. -->
+	<select id="getCommentReportCount" parameterType="HashMap" resultType="int">
+		select count(*)
+		from tbl_comment_report
+		where fk_boardKindNo = ${fk_boardKindNo} and fk_boardNo = ${fk_boardNo} and fk_commentNo = ${fk_commentNo}
+	</select>
+	<select id="getAnonymousCommentReportCount" parameterType="HashMap" resultType="int">
+		select reportCount
+		from tbl_comment_anonymous
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</select>
+	
+	<!-- 댓글의 상태를 0으로 update한다. -->
+	<update id="updateNoticeCommentStatus" parameterType="HashMap">
+		update tbl_comment_notice set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateCouncilCommentStatus" parameterType="HashMap">
+		update tbl_comment_council set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateMajorCommentStatus" parameterType="HashMap">
+		update tbl_comment_major set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateClubCommentStatus" parameterType="HashMap">
+		update tbl_comment_club set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateGraduateCommentStatus" parameterType="HashMap">
+		update tbl_comment_graduate set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateCriticCommentStatus" parameterType="HashMap">
+		update tbl_comment_critic set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateStudyCommentStatus" parameterType="HashMap">
+		update tbl_comment_study set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateCertCommentStatus" parameterType="HashMap">
+		update tbl_comment_cert set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateEmpCommentStatus" parameterType="HashMap">
+		update tbl_comment_emp set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateJobofferCommentStatus" parameterType="HashMap">
+		update tbl_comment_joboffer set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateLostCommentStatus" parameterType="HashMap">
+		update tbl_comment_lost set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateAnonymousCommentStatus" parameterType="HashMap">
+		update tbl_comment_anonymous set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateInformalCommentStatus" parameterType="HashMap">
+		update tbl_comment_informal set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updatePoliteCommentStatus" parameterType="HashMap">
+		update tbl_comment_polite set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateHumorCommentStatus" parameterType="HashMap">
+		update tbl_comment_humor set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateIssueCommentStatus" parameterType="HashMap">
+		update tbl_comment_issue set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateMbtiCommentStatus" parameterType="HashMap">
+		update tbl_comment_mbti set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateFoodCommentStatus" parameterType="HashMap">
+		update tbl_comment_food set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateLoveCommentStatus" parameterType="HashMap">
+		update tbl_comment_love set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateHobbyCommentStatus" parameterType="HashMap">
+		update tbl_comment_hobby set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateHealthCommentStatus" parameterType="HashMap">
+		update tbl_comment_health set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateDietCommentStatus" parameterType="HashMap">
+		update tbl_comment_diet set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateHouseMarketCommentStatus" parameterType="HashMap">
+		update tbl_comment_housemarket set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateBookMarketCommentStatus" parameterType="HashMap">
+		update tbl_comment_bookmarket set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+	<update id="updateEtcMarketCommentStatus" parameterType="HashMap">
+		update tbl_comment_etcmarket set status = 0
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{fk_commentNo}
+	</update>
+
+
+	<!-- 익명 게시판 댓글을 가져온다. -->
+	<select id="getCommentOne" parameterType="HashMap" resultType="String">
+		select password
+		from tbl_comment_anonymous
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}		
+	</select>
+	
+	<!-- 댓글 내용을 수정(update) 한다.  -->
+	<update id="updateNoticeComment" parameterType="HashMap">
+		update tbl_comment_notice set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateCouncilComment" parameterType="HashMap">
+		update tbl_comment_council set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateMajorComment" parameterType="HashMap">
+		update tbl_comment_major set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateClubComment" parameterType="HashMap">
+		update tbl_comment_club set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateGraduateComment" parameterType="HashMap">
+		update tbl_comment_graduate set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateCriticComment" parameterType="HashMap">
+		update tbl_comment_critic set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateStudyComment" parameterType="HashMap">
+		update tbl_comment_study set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateCertComment" parameterType="HashMap">
+		update tbl_comment_cert set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateEmpComment" parameterType="HashMap">
+		update tbl_comment_emp set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateJobofferComment" parameterType="HashMap">
+		update tbl_comment_joboffer set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateLostComment" parameterType="HashMap">
+		update tbl_comment_lost set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateAnonymousComment" parameterType="HashMap">
+		update tbl_comment_anonymous set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateInformalComment" parameterType="HashMap">
+		update tbl_comment_informal set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updatePoliteComment" parameterType="HashMap">
+		update tbl_comment_polite set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateHumorComment" parameterType="HashMap">
+		update tbl_comment_humor set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateIssueComment" parameterType="HashMap">
+		update tbl_comment_issue set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateMbtiComment" parameterType="HashMap">
+		update tbl_comment_mbti set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateFoodComment" parameterType="HashMap">
+		update tbl_comment_food set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateLoveComment" parameterType="HashMap">
+		update tbl_comment_love set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateHobbyComment" parameterType="HashMap">
+		update tbl_comment_hobby set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateHealthComment" parameterType="HashMap">
+		update tbl_comment_health set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateDietComment" parameterType="HashMap">
+		update tbl_comment_diet set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateHouseMarketComment" parameterType="HashMap">
+		update tbl_comment_housemarket set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateBookMarketComment" parameterType="HashMap">
+		update tbl_comment_bookmarket set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	<update id="updateEtcMarketComment" parameterType="HashMap">
+		update tbl_comment_etcmarket set cmtContent = #{cmtContent}
+		where fk_boardNo = #{fk_boardNo} and commentNo = #{commentNo}
+	</update>
+	
+	
+	<!-- 첫번째 랜덤 닉네임 받아오기  -->
+	<select id="getFirstNickname" parameterType="Integer" resultType="String">
+		select firstNick
+		from tbl_anonymous_firstnick
+		where seqno = #{firstNo}
+	</select>
+	
+	<!-- 두번째 랜덤 닉네임 받아오기  -->
+	<select id="getSecondNickname" parameterType="Integer" resultType="String">
+		select secondNick
+		from tbl_anonymous_secondnick
+		where seqno = #{secondNo}
+	</select>
+	
+	
+</mapper>
